@@ -1,0 +1,371 @@
+{
+    "activities": {
+        "2001": {
+            "activity": "Basketball",
+            "year_level": "9-10",
+            "location": "Gym A",
+            "days": "Mon, Wed",
+            "time": "3:30 PM - 4:30 PM",
+            "cost": 40,
+            "teacher_id": 3001,
+            "start_date": "01/02/2025",
+            "end_date": "30/11/2025"
+        },
+        "2002": {
+            "activity": "Chess Club",
+            "year_level": "7-12",
+            "location": "Room 10",
+            "days": "Tue, Thu",
+            "time": "3:00 PM - 4:00 PM",
+            "cost": 20,
+            "teacher_id": 3002,
+            "start_date": "15/02/2025",
+            "end_date": "01/12/2025"
+        },
+        "2003": {
+            "activity": "Soccer",
+            "year_level": "8-10",
+            "location": "Field",
+            "days": "Tue, Thu",
+            "time": "4:00 PM - 5:00 PM",
+            "cost": 30,
+            "teacher_id": 3001,
+            "start_date": "01/03/2025",
+            "end_date": "30/11/2025"
+        },
+        "2004": {
+            "activity": "Art Club",
+            "year_level": "7-12",
+            "location": "Art Room",
+            "days": "Mon, Wed",
+            "time": "3:00 PM - 4:00 PM",
+            "cost": 25,
+            "teacher_id": 3002,
+            "start_date": "01/03/2025",
+            "end_date": "30/11/2025"
+        },
+        "2005": {
+            "activity": "Drama Club",
+            "year_level": "9-12",
+            "location": "Auditorium",
+            "days": "Fri",
+            "time": "2:00 PM - 4:00 PM",
+            "cost": 35,
+            "teacher_id": 3002,
+            "start_date": "01/03/2025",
+            "end_date": "30/11/2025"
+        },
+        "2006": {
+            "activity": "Debate Club",
+            "year_level": "10-12",
+            "location": "Room 15",
+            "days": "Tue",
+            "time": "3:30 PM - 4:30 PM",
+            "cost": 20,
+            "teacher_id": 3001,
+            "start_date": "01/03/2025",
+            "end_date": "30/11/2025"
+        },
+        "2007": {
+            "activity": "Science Club",
+            "year_level": "7-12",
+            "location": "Lab",
+            "days": "Thu",
+            "time": "3:30 PM - 5:00 PM",
+            "cost": 50,
+            "teacher_id": 3001,
+            "start_date": "01/03/2025",
+            "end_date": "30/11/2025"
+        },
+        "2008": {
+            "activity": "Diddy March",
+            "cost": 95,
+            "start_date": "20/06/2019",
+            "end_date": "20/06/2025",
+            "year_level": "",
+            "location": "",
+            "days": "",
+            "time": "",
+            "teacher_id": null
+        }
+    },
+    "students": {
+        "101908": {
+            "firstname": "Maddi",
+            "surname": "Gascar",
+            "gender": "Female",
+            "year_level": 9,
+            "house": "Bradman",
+            "dob": "27/06/2005",
+            "activities_enrolled": [
+                2001
+            ]
+        },
+        "101920": {
+            "firstname": "Laura",
+            "surname": "Norder",
+            "gender": "Female",
+            "year_level": 11,
+            "house": "Chisholm",
+            "dob": "31/07/2002",
+            "activities_enrolled": [
+                2002
+            ]
+        },
+        "136111": {
+            "firstname": "Don",
+            "surname": "Keigh",
+            "gender": "Male",
+            "year_level": 12,
+            "house": "Lawson",
+            "dob": "14/06/2003",
+            "activities_enrolled": [
+                2002,
+                2004,
+                2006,
+                2008
+            ]
+        },
+        "136179": {
+            "firstname": "Jim",
+            "surname": "Pansey",
+            "gender": "Male",
+            "year_level": 12,
+            "house": "Sturt",
+            "dob": "06/10/2002",
+            "activities_enrolled": []
+        },
+        "136180": {
+            "firstname": "Harrison",
+            "surname": "Chapman",
+            "gender": "Non-Binary",
+            "year_level": 12,
+            "house": "Lawson",
+            "dob": "14/06/2003",
+            "activities_enrolled": [
+                2002,
+                2001
+            ]
+        },
+        "101921": {
+            "firstname": "Quinn",
+            "surname": "Martinez",
+            "gender": "Female",
+            "year_level": 12,
+            "house": "Lawson",
+            "dob": "24/02/2000",
+            "activities_enrolled": [
+                2004
+            ]
+        },
+        "101922": {
+            "firstname": "Quinn",
+            "surname": "White",
+            "gender": "Male",
+            "year_level": 7,
+            "house": "Lawson",
+            "dob": "08/08/2000",
+            "activities_enrolled": [
+                2005
+            ]
+        },
+        "101923": {
+            "firstname": "Blake",
+            "surname": "Williams",
+            "gender": "Male",
+            "year_level": 8,
+            "house": "Chisholm",
+            "dob": "11/11/2003",
+            "activities_enrolled": [
+                2001
+            ]
+        },
+        "101924": {
+            "firstname": "Taylor",
+            "surname": "Wilson",
+            "gender": "Non-Binary",
+            "year_level": 10,
+            "house": "Lawson",
+            "dob": "20/06/2005",
+            "activities_enrolled": [
+                2005
+            ]
+        },
+        "101925": {
+            "firstname": "Alex",
+            "surname": "White",
+            "gender": "Non-Binary",
+            "year_level": 9,
+            "house": "Lawson",
+            "dob": "17/03/2003",
+            "activities_enrolled": [
+                2006
+            ]
+        },
+        "101926": {
+            "firstname": "Cameron",
+            "surname": "White",
+            "gender": "Female",
+            "year_level": 10,
+            "house": "Lawson",
+            "dob": "14/08/2005",
+            "activities_enrolled": [
+                2002
+            ]
+        },
+        "101927": {
+            "firstname": "Quinn",
+            "surname": "Anderson",
+            "gender": "Female",
+            "year_level": 12,
+            "house": "Chisholm",
+            "dob": "15/10/2004",
+            "activities_enrolled": [
+                2003
+            ]
+        },
+        "101928": {
+            "firstname": "Alex",
+            "surname": "Hernandez",
+            "gender": "Male",
+            "year_level": 9,
+            "house": "Chisholm",
+            "dob": "06/05/2002",
+            "activities_enrolled": [
+                2006
+            ]
+        },
+        "101929": {
+            "firstname": "Avery",
+            "surname": "Rodriguez",
+            "gender": "Female",
+            "year_level": 10,
+            "house": "Sturt",
+            "dob": "13/07/2001",
+            "activities_enrolled": [
+                2006
+            ]
+        },
+        "101930": {
+            "firstname": "Peyton",
+            "surname": "Davis",
+            "gender": "Non-Binary",
+            "year_level": 11,
+            "house": "Bradman",
+            "dob": "28/09/2002",
+            "activities_enrolled": [
+                2003
+            ]
+        },
+        "101931": {
+            "firstname": "Peyton",
+            "surname": "Davis",
+            "gender": "Female",
+            "year_level": 8,
+            "house": "Bradman",
+            "dob": "15/09/2002",
+            "activities_enrolled": [
+                2003
+            ]
+        },
+        "101932": {
+            "firstname": "Skyler",
+            "surname": "Rodriguez",
+            "gender": "Male",
+            "year_level": 8,
+            "house": "Sturt",
+            "dob": "07/09/2002",
+            "activities_enrolled": [
+                2001
+            ]
+        },
+        "101933": {
+            "firstname": "Drew",
+            "surname": "Garcia",
+            "gender": "Male",
+            "year_level": 10,
+            "house": "Lawson",
+            "dob": "19/06/2001",
+            "activities_enrolled": [
+                2005
+            ]
+        },
+        "101934": {
+            "firstname": "Skyler",
+            "surname": "Martinez",
+            "gender": "Male",
+            "year_level": 10,
+            "house": "Sturt",
+            "dob": "28/03/2001",
+            "activities_enrolled": [
+                2007
+            ]
+        },
+        "101935": {
+            "firstname": "Emerson",
+            "surname": "Moore",
+            "gender": "Female",
+            "year_level": 9,
+            "house": "Sturt",
+            "dob": "27/08/2005",
+            "activities_enrolled": [
+                2004
+            ]
+        },
+        "101936": {
+            "firstname": "Avery",
+            "surname": "Garcia",
+            "gender": "Male",
+            "year_level": 11,
+            "house": "Chisholm",
+            "dob": "02/06/2003",
+            "activities_enrolled": [
+                2001
+            ]
+        },
+        "101937": {
+            "firstname": "Alex",
+            "surname": "Garcia",
+            "gender": "Non-Binary",
+            "year_level": 10,
+            "house": "Sturt",
+            "dob": "03/10/2003",
+            "activities_enrolled": [
+                2001
+            ]
+        },
+        "101938": {
+            "firstname": "Reese",
+            "surname": "Jones",
+            "gender": "Female",
+            "year_level": 7,
+            "house": "Sturt",
+            "dob": "23/09/2000",
+            "activities_enrolled": [
+                2007
+            ]
+        },
+        "101939": {
+            "firstname": "Avery",
+            "surname": "Thompson",
+            "gender": "Male",
+            "year_level": 9,
+            "house": "Lawson",
+            "dob": "02/05/2001",
+            "activities_enrolled": [
+                2003
+            ]
+        },
+        "101940": {
+            "firstname": "Harper",
+            "surname": "Williams",
+            "gender": "Female",
+            "year_level": 9,
+            "house": "Sturt",
+            "dob": "13/05/2001",
+            "activities_enrolled": [
+                2007
+            ]
+        }
+    }
+}
