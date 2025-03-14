@@ -348,6 +348,9 @@ USERS = {
     "maddi": {"password": "student123", "role": "student", "student_id": 101908},
     "laura": {"password": "student123", "role": "student", "student_id": 101920},
     "don":   {"password": "student123", "role": "student", "student_id": 136111},
+    "harrison":   {"password": "student123", "role": "student", "student_id": 136180},
+    "rowan":   {"password": "student123", "role": "student", "student_id": 101990},
+    "student":   {"password": "student123", "role": "student", "student_id": 101908},
     "jim":   {"password": "student123", "role": "student", "student_id": 136179}
 }
 
