@@ -109,7 +109,17 @@ students = {
         "house": "Sturt",
         "dob": "06/10/2002",
         "activities_enrolled": []      # Not enrolled yet
-    }
+    }, 
+    136180: {
+        "firstname": "Harrison",
+        "surname": "Chapman",
+        "gender": "Non-Binary",
+        "year_level": 12,
+        "house": "Lawson",
+        "dob": "14/06/2003",
+        "activities_enrolled": [2002],  # Initially enrolled in Chess
+        "activities_enrolled": [2001]  # Initially enrolled in Basketball
+    },
 }
 
 # -------------------------------------------------------------------
