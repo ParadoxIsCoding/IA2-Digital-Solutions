@@ -33,8 +33,8 @@ def load_data():
 # Default Data Definitions
 # -------------------------------------------------------------------
 def get_default_activities():
-    """Returns the default activities (7 total)."""
-    return {
+    """Returns the default activities (7 original + 10 additional = 17 total)."""
+    activities = {
         2001: {
             "activity": "Basketball",
             "year_level": "9-10",
@@ -113,9 +113,124 @@ def get_default_activities():
             "end_date": "30/11/2025"
         }
     }
+    # Add 10 additional clubs
+    additional_clubs = {
+        2008: {
+            "activity": "Music Club",
+            "year_level": "7-12",
+            "location": "Music Room",
+            "days": "Mon, Wed",
+            "time": "4:00 PM - 5:00 PM",
+            "cost": 30,
+            "teacher_id": 3002,
+            "start_date": "05/03/2025",
+            "end_date": "25/11/2025"
+        },
+        2009: {
+            "activity": "Robotics Club",
+            "year_level": "9-12",
+            "location": "Lab 2",
+            "days": "Tue, Thu",
+            "time": "4:30 PM - 5:30 PM",
+            "cost": 45,
+            "teacher_id": 3001,
+            "start_date": "10/03/2025",
+            "end_date": "20/11/2025"
+        },
+        2010: {
+            "activity": "Dance Club",
+            "year_level": "7-12",
+            "location": "Dance Studio",
+            "days": "Wed, Fri",
+            "time": "3:30 PM - 4:30 PM",
+            "cost": 25,
+            "teacher_id": 3002,
+            "start_date": "12/03/2025",
+            "end_date": "22/11/2025"
+        },
+        2011: {
+            "activity": "Literature Club",
+            "year_level": "8-12",
+            "location": "Library",
+            "days": "Mon, Thu",
+            "time": "4:00 PM - 5:00 PM",
+            "cost": 15,
+            "teacher_id": 3002,
+            "start_date": "15/03/2025",
+            "end_date": "28/11/2025"
+        },
+        2012: {
+            "activity": "Coding Club",
+            "year_level": "9-12",
+            "location": "Computer Lab",
+            "days": "Tue, Fri",
+            "time": "3:30 PM - 5:00 PM",
+            "cost": 40,
+            "teacher_id": 3001,
+            "start_date": "18/03/2025",
+            "end_date": "30/11/2025"
+        },
+        2013: {
+            "activity": "Photography Club",
+            "year_level": "7-12",
+            "location": "Art Room",
+            "days": "Wed",
+            "time": "3:00 PM - 4:30 PM",
+            "cost": 20,
+            "teacher_id": 3002,
+            "start_date": "20/03/2025",
+            "end_date": "25/11/2025"
+        },
+        2014: {
+            "activity": "Environmental Club",
+            "year_level": "7-12",
+            "location": "Outdoor Garden",
+            "days": "Thu",
+            "time": "4:00 PM - 5:00 PM",
+            "cost": 10,
+            "teacher_id": 3001,
+            "start_date": "22/03/2025",
+            "end_date": "27/11/2025"
+        },
+        2015: {
+            "activity": "Cooking Club",
+            "year_level": "8-12",
+            "location": "Kitchen",
+            "days": "Fri",
+            "time": "3:00 PM - 5:00 PM",
+            "cost": 35,
+            "teacher_id": 3002,
+            "start_date": "25/03/2025",
+            "end_date": "30/11/2025"
+        },
+        2016: {
+            "activity": "Martial Arts Club",
+            "year_level": "9-12",
+            "location": "Gym B",
+            "days": "Mon, Wed",
+            "time": "4:00 PM - 5:00 PM",
+            "cost": 50,
+            "teacher_id": 3001,
+            "start_date": "28/03/2025",
+            "end_date": "30/11/2025"
+        },
+        2017: {
+            "activity": "Gardening Club",
+            "year_level": "7-12",
+            "location": "School Garden",
+            "days": "Tue",
+            "time": "3:00 PM - 4:00 PM",
+            "cost": 15,
+            "teacher_id": 3002,
+            "start_date": "30/03/2025",
+            "end_date": "30/11/2025"
+        }
+    }
+    activities.update(additional_clubs)
+    return activities
 
 def get_default_students():
-    """Returns the default students (5 original + 20 extra)."""
+    """Returns the default students (5 original + 20 extra + 50 additional)."""
     default_students = {
         101908: {
             "firstname": "Maddi",
@@ -177,6 +292,8 @@ def get_default_students():
         "Taylor", "Thomas", "Hernandez", "Moore", "Martin", "Jackson",
         "Thompson", "White"
     ]
+    all_club_ids = list(get_default_activities().keys())
+
     # Generate 20 additional students with IDs 101921 to 101940
     for student_id in range(101921, 101941):
         first = random.choice(first_names)
@@ -185,7 +302,25 @@ def get_default_students():
         year_level = random.randint(7, 12)
         house = random.choice(houses)
         dob = f"{random.randint(1,28):02}/{random.randint(1,12):02}/{2000+random.randint(0,5)}"
-        activity = random.choice(list(get_default_activities().keys()))
+        activity = random.choice(all_club_ids)
+        default_students[student_id] = {
+            "firstname": first,
+            "surname": last,
+            "gender": gender,
+            "year_level": year_level,
+            "house": house,
+            "dob": dob,
+            "activities_enrolled": [activity]
+        }
+    # Generate 50 additional students with IDs 101941 to 101990
+    for student_id in range(101941, 101991):
+        first = random.choice(first_names)
+        last = random.choice(surnames)
+        gender = random.choice(["Male", "Female", "Non-Binary"])
+        year_level = random.randint(7, 12)
+        house = random.choice(houses)
+        dob = f"{random.randint(1,28):02}/{random.randint(1,12):02}/{2000+random.randint(0,5)}"
+        activity = random.choice(all_club_ids)
         default_students[student_id] = {
             "firstname": first,
             "surname": last,
@@ -213,8 +348,7 @@ USERS = {
     "maddi": {"password": "student123", "role": "student", "student_id": 101908},
     "laura": {"password": "student123", "role": "student", "student_id": 101920},
     "don":   {"password": "student123", "role": "student", "student_id": 136111},
-    "jim":   {"password": "student123", "role": "student", "student_id": 136179},
-    "Harrison": {"password": "student123", "role": "student", "student_id": 136180}
+    "jim":   {"password": "student123", "role": "student", "student_id": 136179}
 }
 
 # -------------------------------------------------------------------
@@ -256,8 +390,8 @@ class LoginWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Login - Extracurricular Program")
-        # Slightly bigger geometry so everything fits nicely
-        self.geometry("380x220")
+        # Increase the window size a bit more for comfort
+        self.geometry("450x260")
         self.resizable(False, False)
 
         # Optional: set a style for better visibility on dark mode
@@ -270,22 +404,27 @@ class LoginWindow(tk.Tk):
         style.configure("TButton", background="#e0e0e0", foreground="black")
 
         main_frame = ttk.Frame(self, padding=20)
-        # Fill both directions so the frame expands to the window size
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        title = ttk.Label(main_frame, text="Please Login", font=("Arial", 18, "bold"))
-        title.pack(pady=10)
+        title = ttk.Label(main_frame, text="Please Login", font=("Arial", 20, "bold"))
+        title.pack(pady=15)
 
-        ttk.Label(main_frame, text="Username:").pack(anchor=tk.W, pady=2)
-        self.username_entry = ttk.Entry(main_frame, width=30)
-        self.username_entry.pack(pady=5)
+        # Username row
+        user_frame = ttk.Frame(main_frame)
+        user_frame.pack(pady=5, fill=tk.X)
+        ttk.Label(user_frame, text="Username:", width=15, anchor=tk.E).pack(side=tk.LEFT, padx=5)
+        self.username_entry = ttk.Entry(user_frame, width=30)
+        self.username_entry.pack(side=tk.LEFT, padx=5)
 
-        ttk.Label(main_frame, text="Password:").pack(anchor=tk.W, pady=2)
-        self.password_entry = ttk.Entry(main_frame, show="*", width=30)
-        self.password_entry.pack(pady=5)
+        # Password row
+        pass_frame = ttk.Frame(main_frame)
+        pass_frame.pack(pady=5, fill=tk.X)
+        ttk.Label(pass_frame, text="Password:", width=15, anchor=tk.E).pack(side=tk.LEFT, padx=5)
+        self.password_entry = ttk.Entry(pass_frame, show="*", width=30)
+        self.password_entry.pack(side=tk.LEFT, padx=5)
 
         login_button = ttk.Button(main_frame, text="Login", command=self.check_credentials)
-        login_button.pack(pady=10)
+        login_button.pack(pady=20)
 
     def check_credentials(self):
         username = self.username_entry.get().strip()
@@ -352,6 +491,10 @@ class MainApplication(tk.Tk):
 # Admin Frame
 # -------------------------------------------------------------------
 class AdminFrame(ttk.Frame):
+    """
+    Now uses single-click (TreeviewSelect) to show enrolled students
+    and single-click in the students list to show student info.
+    """
     def __init__(self, parent):
         super().__init__(parent, padding=10)
         self.left_frame = ttk.Frame(self)
@@ -373,7 +516,8 @@ class AdminFrame(ttk.Frame):
         self.activity_tree.column("income", width=90)
         self.activity_tree.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        self.activity_tree.bind("<Double-1>", self.on_activity_double_click)
+        # Use single-click event instead of double-click
+        self.activity_tree.bind("<<TreeviewSelect>>", self.on_activity_select)
 
         btn_frame = ttk.Frame(self.left_frame)
         btn_frame.pack(pady=5, fill=tk.X)
@@ -483,7 +627,8 @@ class AdminFrame(ttk.Frame):
 
         ttk.Button(self.current_right, text="Save", command=save_activity).pack(pady=10)
 
-    def on_activity_double_click(self, event):
+    def on_activity_select(self, event):
+        """Single-click on an activity to display its enrolled students."""
         selection = self.activity_tree.selection()
         if not selection:
             return
@@ -502,28 +647,31 @@ class AdminFrame(ttk.Frame):
         ttk.Label(self.current_right, text=title, font=("Arial", 14, "bold")).pack(anchor=tk.N, pady=5)
 
         columns = ("student_id", "name", "year_level", "house")
-        tree = ttk.Treeview(self.current_right, columns=columns, show="headings", height=8)
+        self.students_tree = ttk.Treeview(self.current_right, columns=columns, show="headings", height=8)
         for col in columns:
-            tree.heading(col, text=col.capitalize())
-        tree.pack(fill=tk.BOTH, expand=True)
+            self.students_tree.heading(col, text=col.capitalize())
+        self.students_tree.pack(fill=tk.BOTH, expand=True)
 
         for s_id, s_data in students.items():
             if activity_id in s_data.get("activities_enrolled", []):
                 name = f"{s_data['firstname']} {s_data['surname']}"
-                tree.insert("", tk.END, values=(s_id, name, s_data["year_level"], s_data["house"]))
+                self.students_tree.insert("", tk.END, values=(s_id, name, s_data["year_level"], s_data["house"]))
 
-        def on_student_double(event):
-            sel = tree.selection()
-            if sel:
-                item_vals = tree.item(sel[0], "values")
-                st_id = int(item_vals[0])
-                info = format_student_info(st_id)
-                info_label.config(text=info)
+        # Single-click on a student to show their info
+        self.students_tree.bind("<<TreeviewSelect>>", self.on_student_select)
 
-        tree.bind("<Double-1>", on_student_double)
+        self.info_label = ttk.Label(self.current_right, text="", justify=tk.LEFT)
+        self.info_label.pack(fill=tk.X, pady=5)
 
-        info_label = ttk.Label(self.current_right, text="", justify=tk.LEFT)
-        info_label.pack(fill=tk.X, pady=5)
+    def on_student_select(self, event):
+        """Single-click on a student to show detailed info."""
+        selection = self.students_tree.selection()
+        if not selection:
+            return
+        vals = self.students_tree.item(selection[0], "values")
+        st_id = int(vals[0])
+        info = format_student_info(st_id)
+        self.info_label.config(text=info)
 
 # -------------------------------------------------------------------
 # Staff Frame
@@ -592,6 +740,7 @@ class StaffFrame(ttk.Frame):
         save_data(activities, students)
 
     def on_student_double_click(self, event):
+        """Double-click to show student info (Staff panel remains unchanged)."""
         selection = self.st_tree.selection()
         if selection:
             item_vals = self.st_tree.item(selection[0], "values")
