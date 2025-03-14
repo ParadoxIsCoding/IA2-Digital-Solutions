@@ -348,9 +348,7 @@ USERS = {
     "maddi": {"password": "student123", "role": "student", "student_id": 101908},
     "laura": {"password": "student123", "role": "student", "student_id": 101920},
     "don":   {"password": "student123", "role": "student", "student_id": 136111},
-    "jim":   {"password": "student123", "role": "student", "student_id": 136179},
-    "rowan": {"password": "student123", "role": "student", "student_id": 101990}, 
-    "harrison": {"password": "student123", "role": "student", "student_id": 136180}, 
+    "jim":   {"password": "student123", "role": "student", "student_id": 136179}
 }
 
 # -------------------------------------------------------------------
@@ -494,8 +492,8 @@ class MainApplication(tk.Tk):
 # -------------------------------------------------------------------
 class AdminFrame(ttk.Frame):
     """
-    Now uses single-click (TreeviewSelect) to show enrolled students
-    and single-click in the students list to show student info.
+    Admin can single-click an activity to see enrolled students,
+    then single-click a student to see that student's info.
     """
     def __init__(self, parent):
         super().__init__(parent, padding=10)
@@ -518,7 +516,7 @@ class AdminFrame(ttk.Frame):
         self.activity_tree.column("income", width=90)
         self.activity_tree.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        # Use single-click event instead of double-click
+        # Single-click to show enrolled students
         self.activity_tree.bind("<<TreeviewSelect>>", self.on_activity_select)
 
         btn_frame = ttk.Frame(self.left_frame)
@@ -630,7 +628,6 @@ class AdminFrame(ttk.Frame):
         ttk.Button(self.current_right, text="Save", command=save_activity).pack(pady=10)
 
     def on_activity_select(self, event):
-        """Single-click on an activity to display its enrolled students."""
         selection = self.activity_tree.selection()
         if not selection:
             return
@@ -666,7 +663,6 @@ class AdminFrame(ttk.Frame):
         self.info_label.pack(fill=tk.X, pady=5)
 
     def on_student_select(self, event):
-        """Single-click on a student to show detailed info."""
         selection = self.students_tree.selection()
         if not selection:
             return
@@ -679,6 +675,10 @@ class AdminFrame(ttk.Frame):
 # Staff Frame
 # -------------------------------------------------------------------
 class StaffFrame(ttk.Frame):
+    """
+    Updated so staff can click on an activity to see the enrolled students,
+    then click on a student to see that student's info.
+    """
     def __init__(self, parent):
         super().__init__(parent, padding=10)
         ttk.Label(self, text="Staff Panel", font=("Arial", 16, "bold")).pack(anchor=tk.N, pady=5)
@@ -699,7 +699,26 @@ class StaffFrame(ttk.Frame):
         self.act_tree.column("enrollments", width=100)
         self.act_tree.pack(fill=tk.BOTH, expand=True)
 
+        # Single-click on an activity to show enrolled students
+        self.act_tree.bind("<<TreeviewSelect>>", self.on_activity_select)
+
         ttk.Button(self.activities_tab, text="Refresh", command=self.refresh_activities).pack(pady=5)
+
+        # A frame to hold the "Enrolled Students" tree
+        self.enrolled_frame = ttk.Labelframe(self.activities_tab, text="Enrolled Students")
+        self.enrolled_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        cols_students = ("student_id", "name", "year_level", "house")
+        self.act_students_tree = ttk.Treeview(self.enrolled_frame, columns=cols_students, show="headings", height=8)
+        for col in cols_students:
+            self.act_students_tree.heading(col, text=col.capitalize())
+        self.act_students_tree.pack(fill=tk.BOTH, expand=True)
+
+        # Single-click on a student to show their info
+        self.act_students_tree.bind("<<TreeviewSelect>>", self.on_enrolled_student_select)
+
+        self.student_info_label = ttk.Label(self.enrolled_frame, text="", justify=tk.LEFT)
+        self.student_info_label.pack(fill=tk.X, pady=5)
 
         # Students tab
         self.students_tab = ttk.Frame(self.notebook, padding=10)
@@ -714,6 +733,7 @@ class StaffFrame(ttk.Frame):
         self.st_tree.column("num_activities", width=120)
         self.st_tree.pack(fill=tk.BOTH, expand=True)
 
+        # Keep the existing double-click to show student info in the Students tab
         self.st_tree.bind("<Double-1>", self.on_student_double_click)
 
         ttk.Button(self.students_tab, text="Refresh", command=self.refresh_students).pack(pady=5)
@@ -725,6 +745,7 @@ class StaffFrame(ttk.Frame):
         self.refresh_students()
 
     def refresh_activities(self):
+        # Clear the main activities tree
         for row in self.act_tree.get_children():
             self.act_tree.delete(row)
         for act_id, data in activities.items():
@@ -733,6 +754,7 @@ class StaffFrame(ttk.Frame):
         save_data(activities, students)
 
     def refresh_students(self):
+        # Clear the students tab tree
         for row in self.st_tree.get_children():
             self.st_tree.delete(row)
         for s_id, s_data in students.items():
@@ -741,8 +763,43 @@ class StaffFrame(ttk.Frame):
             self.st_tree.insert("", tk.END, values=(s_id, fullname, num))
         save_data(activities, students)
 
+    def on_activity_select(self, event):
+        """Single-click on an activity to show all students enrolled in it."""
+        selection = self.act_tree.selection()
+        if not selection:
+            return
+        item_vals = self.act_tree.item(selection[0], "values")
+        if not item_vals:
+            return
+        activity_id = int(item_vals[0])
+
+        # Clear existing rows from the enrolled students tree
+        for row in self.act_students_tree.get_children():
+            self.act_students_tree.delete(row)
+
+        # Also clear the info label
+        self.student_info_label.config(text="")
+
+        # Populate with enrolled students
+        for s_id, s_data in students.items():
+            if activity_id in s_data.get("activities_enrolled", []):
+                name = f"{s_data['firstname']} {s_data['surname']}"
+                year = s_data["year_level"]
+                house = s_data["house"]
+                self.act_students_tree.insert("", tk.END, values=(s_id, name, year, house))
+
+    def on_enrolled_student_select(self, event):
+        """Single-click on an enrolled student to show their info."""
+        selection = self.act_students_tree.selection()
+        if not selection:
+            return
+        vals = self.act_students_tree.item(selection[0], "values")
+        student_id = int(vals[0])
+        info = format_student_info(student_id)
+        self.student_info_label.config(text=info)
+
     def on_student_double_click(self, event):
-        """Double-click to show student info (Staff panel remains unchanged)."""
+        """Double-click a student in the Students tab to show info."""
         selection = self.st_tree.selection()
         if selection:
             item_vals = self.st_tree.item(selection[0], "values")
@@ -902,7 +959,6 @@ class StudentFrame(ttk.Frame):
         self.action_button.config(text="")
 
     def on_action_button(self):
-        # This is a placeholder; the actual action is assigned dynamically
         pass
 
 # -------------------------------------------------------------------
