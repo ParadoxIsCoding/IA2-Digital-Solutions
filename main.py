@@ -373,8 +373,11 @@ def format_student_info(student_id):
     if enrolled:
         act_names = [activities[a_id]["activity"] for a_id in enrolled if a_id in activities]
         activities_str = ", ".join(act_names)
+        # Calculate total cost
+        total_cost = sum(activities[a_id]["cost"] for a_id in enrolled if a_id in activities)
     else:
         activities_str = "None"
+        total_cost = 0
 
     info = (
         f"Name: {s_data['firstname']} {s_data['surname']}\n"
@@ -383,6 +386,7 @@ def format_student_info(student_id):
         f"House: {s_data['house']}\n"
         f"DOB: {s_data['dob']}\n"
         f"Activities Enrolled: {activities_str}\n"
+        f"Total Cost: ${total_cost}\n"
     )
     return info
 
