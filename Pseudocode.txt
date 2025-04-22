@@ -1,0 +1,36 @@
+#User Login 
+FUNCTION login(username, password):
+    IF username AND password match admin credentials:
+        ACCESS Admin Portal
+    ELSE IF match staff credentials:
+        ACCESS Staff Portal
+    ELSE IF match student credentials:
+        ACCESS Student Portal
+    ELSE:
+        DISPLAY "Login failed"
+
+#Activity Enrolment 
+FUNCTION enrol(student_id, activity_id):
+    IF student_id NOT IN enrolments[activity_id]:
+        enrolments[activity_id].append(student_id)
+        DISPLAY "Enrolment successful"
+    ELSE:
+        DISPLAY "You are already enrolled"
+
+#Income Total 
+FUNCTION calculate_income(activity_id):
+    student_count = LENGTH(enrolments[activity_id])
+    cost = activities[activity_id]["cost"]
+    RETURN student_count * cost
+
+#CVS Import 
+FUNCTION upload_csv(file_path, target_type):
+    OPEN file_path
+    FOR EACH row IN csv:
+        IF target_type == "students":
+            students.append(parse_student(row))
+        ELSE IF target_type == "activities":
+            activities.append(parse_activity(row))
+        ELSE IF target_type == "teachers":
+            teachers.append(parse_teacher(row))
+    DISPLAY "CSV Upload Complete"
