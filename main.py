@@ -787,18 +787,24 @@ class StudentFrame(ttk.Frame):
         self.details_label.pack(anchor=tk.NW, pady=(0, 5))
 
         # Use Text widget for multi-line details, disable editing
-        # *** FIX: Removed the problematic background argument ***
-        # This line caused the error: unknown option "-bg" because tk.Text
-        # doesn't handle ttk theme backgrounds in the same way.
-        # Simply removing it lets tk.Text use its default background, fixing the error.
         self.club_details_text = tk.Text(
             right_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, relief=tk.FLAT
-            # , background=self.cget('bg') # <--- REMOVED THIS PART
         )
-        # Set background explicitly to the ttk frame's background for better theme matching
+        # Set background and foreground explicitly for better theme matching
         style = ttk.Style()
         text_bg = style.lookup('TFrame', 'background') # Get default frame background
-        self.club_details_text.config(background=text_bg, highlightthickness=0) # Apply bg, remove border
+        # Try to get label foreground, fallback to black
+        try:
+            text_fg = style.lookup('TLabel', 'foreground')
+        except tk.TclError:
+            text_fg = "black" # Fallback color
+
+        self.club_details_text.config(
+            background=text_bg,
+            foreground=text_fg, # Set foreground color explicitly
+            highlightthickness=0, # Remove border highlight
+            borderwidth=0 # Remove border
+        )
         self.club_details_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
 
@@ -838,28 +844,26 @@ class StudentFrame(ttk.Frame):
             is_eligible = False
             if student_year is not None and allowed_years_str != "N/A":
                 try:
-                    if "-" in allowed_years_str: # Range like "9-12"
+                    # Handle "All" or "7-12" type entries first
+                    if "all" in allowed_years_str.lower() or allowed_years_str == "7-12":
+                        is_eligible = True
+                    elif "-" in allowed_years_str: # Range like "9-10"
                         min_year, max_year = map(int, allowed_years_str.split('-'))
                         if min_year <= student_year <= max_year:
                             is_eligible = True
                     elif "," in allowed_years_str: # List like "7, 9, 11"
-                         allowed_years = map(int, allowed_years_str.split(','))
+                         allowed_years = [int(y.strip()) for y in allowed_years_str.split(',')]
                          if student_year in allowed_years:
                              is_eligible = True
-                    else: # Single year like "10" or maybe "7-12" without strict parsing
-                         # Simple check if student year is in the string (less robust but handles "7-12")
-                         if str(student_year) in allowed_years_str:
-                            is_eligible = True # Fallback check, might include "1" in "10-12" incorrectly if not careful
-                         # More robust check for single year or full range:
-                         try:
-                            if int(allowed_years_str) == student_year:
-                                is_eligible = True
-                         except ValueError: # Not a single integer, assume it means all years if not a range
-                             if "7-12" in allowed_years_str: # Handle common "all years" case
-                                is_eligible = True
+                    else: # Single year like "10"
+                         if int(allowed_years_str) == student_year:
+                            is_eligible = True
                 except ValueError:
                     print(f"Warning: Could not parse year level '{allowed_years_str}' for club {club_id}")
                     is_eligible = True # Default to eligible if format is unexpected
+            elif allowed_years_str == "N/A": # If no year specified, assume eligible
+                 is_eligible = True
+
 
             # Always show enrolled clubs
             if club_id in enrolled_ids:
