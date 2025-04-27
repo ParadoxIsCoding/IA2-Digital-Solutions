@@ -33,6 +33,13 @@ def load_data():
         # Convert string keys back to integers after loading
         activities_loaded = {int(k): v for k, v in data.get("activities", {}).items()}
         students_loaded = {int(k): v for k, v in data.get("students", {}).items()}
+        # Ensure activities_enrolled is a list
+        for s_id, s_data in students_loaded.items():
+            if "activities_enrolled" not in s_data:
+                s_data["activities_enrolled"] = []
+            elif not isinstance(s_data["activities_enrolled"], list):
+                 s_data["activities_enrolled"] = [] # Reset if not a list
+
         return activities_loaded, students_loaded
     except (IOError, json.JSONDecodeError, ValueError) as e:
         messagebox.showwarning("Load Error", f"Could not load data from {DATA_FILE}:\n{e}\nLoading default data.")
@@ -164,10 +171,28 @@ class LoginWindow(tk.Tk):
 
         # Use a theme and basic styling
         style = ttk.Style(self)
-        style.theme_use("clam") # 'clam', 'alt', 'default', 'classic' are common options
-        style.configure("TFrame", background="#f0f0f0")
-        style.configure("TLabel", background="#f0f0f0", foreground="black")
-        style.configure("TEntry", fieldbackground="white", foreground="black")
+        # Try different themes if 'clam' isn't ideal on your system
+        try:
+            style.theme_use("clam") # 'clam', 'alt', 'default', 'classic' are common options
+        except tk.TclError:
+            print("Clam theme not found, using default.")
+            style.theme_use("default")
+
+        # Use system colors for better integration (optional)
+        # frame_bg = style.lookup('TFrame', 'background')
+        # label_fg = style.lookup('TLabel', 'foreground')
+        # entry_bg = style.lookup('TEntry', 'fieldbackground')
+        # entry_fg = style.lookup('TEntry', 'foreground')
+
+        # Use fallback colors if system lookup fails or isn't desired
+        frame_bg = "#f0f0f0"
+        label_fg = "black"
+        entry_bg = "white"
+        entry_fg = "black"
+
+        style.configure("TFrame", background=frame_bg)
+        style.configure("TLabel", background=frame_bg, foreground=label_fg)
+        style.configure("TEntry", fieldbackground=entry_bg, foreground=entry_fg)
         style.configure("TButton", padding=5) # Add some padding to buttons
 
         main_frame = ttk.Frame(self, padding=20)
@@ -223,6 +248,13 @@ class MainApplication(tk.Tk):
         self.title(f"Extracurricular Program - {role.capitalize()} View")
         self.geometry("950x600") # Adjusted size
 
+        # Use theme for consistency
+        style = ttk.Style(self)
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            style.theme_use("default")
+
         # Top Bar: Title and Logout
         top_frame = ttk.Frame(self, padding=(10, 5))
         top_frame.pack(side=tk.TOP, fill=tk.X)
@@ -254,7 +286,12 @@ class MainApplication(tk.Tk):
             StaffFrame(self.content_frame).pack(fill=tk.BOTH, expand=True)
         elif self.role == "student":
             if self.student_id:
-                StudentFrame(self.content_frame, self.student_id).pack(fill=tk.BOTH, expand=True)
+                # Check if student ID actually exists before creating frame
+                if self.student_id in students:
+                    StudentFrame(self.content_frame, self.student_id).pack(fill=tk.BOTH, expand=True)
+                else:
+                    messagebox.showerror("Error", f"Student ID {self.student_id} not found in student data.")
+                    self.logout() # Log out if student data is missing for ID
             else:
                 messagebox.showerror("Error", "Student ID not found for student login.")
                 self.logout() # Log out if student ID is missing
@@ -294,7 +331,7 @@ class AdminFrame(ttk.Frame):
         # Activities Treeview
         columns = ("activity_id", "activity", "cost", "enrollments", "income")
         self.activity_tree = ttk.Treeview(left_panel, columns=columns, show="headings", height=15)
-        self.setup_treeview_columns(self.activity_tree, columns, {"cost": 60, "enrollments": 90, "income": 90})
+        self.setup_treeview_columns(self.activity_tree, columns, {"cost": 60, "enrollments": 90, "income": 90, "activity_id": 80})
         self.activity_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         self.activity_tree.bind("<<TreeviewSelect>>", self.on_activity_select)
 
@@ -352,7 +389,7 @@ class AdminFrame(ttk.Frame):
 
         # Define fields to edit/add
         fields = {
-            "Activity ID": {"entry": ttk.Entry(editor_frame), "value": activity_id_to_edit if activity_id_to_edit else "(New)", "row": 1, "state": tk.DISABLED if activity_id_to_edit else tk.NORMAL },
+            "Activity ID": {"entry": ttk.Entry(editor_frame), "value": activity_id_to_edit if activity_id_to_edit else "(Auto-generated)", "row": 1, "state": tk.DISABLED },
             "Activity Name": {"entry": ttk.Entry(editor_frame), "value": activity_data.get("activity", ""), "row": 2},
             "Year Level": {"entry": ttk.Entry(editor_frame), "value": activity_data.get("year_level", ""), "row": 3},
             "Location": {"entry": ttk.Entry(editor_frame), "value": activity_data.get("location", ""), "row": 4},
@@ -392,6 +429,10 @@ class AdminFrame(ttk.Frame):
                 return
             try:
                 teacher_id_val = int(teacher_id_str) if teacher_id_str else None
+                if teacher_id_val is not None and teacher_id_val not in teachers:
+                     messagebox.showwarning("Warning", f"Teacher ID {teacher_id_val} does not exist in the teacher list.")
+                     # Decide if you want to prevent saving or just warn
+                     # return # Uncomment to prevent saving with invalid teacher ID
             except ValueError:
                 messagebox.showerror("Error", "Teacher ID must be a number (or blank).")
                 return
@@ -414,10 +455,10 @@ class AdminFrame(ttk.Frame):
                 activities[act_id].update(updated_data)
                 message = "Activity updated successfully."
             else: # Adding new
-                # Find the next available ID
-                new_id = max(activities.keys()) + 1 if activities else 2001
+                # Find the next available ID (starting from 2001)
+                new_id = max(list(activities.keys()) + [2000]) + 1 # Ensure it's at least 2001
                 activities[new_id] = updated_data
-                message = "Activity added successfully."
+                message = f"Activity '{act_name}' added successfully with ID {new_id}."
 
             save_data(activities, students) # Save changes to file
             self.refresh_activities() # Update the tree view
@@ -431,7 +472,8 @@ class AdminFrame(ttk.Frame):
         """When an activity is selected, show enrolled students in the right panel."""
         selection = self.activity_tree.selection()
         if not selection:
-            self.clear_right_panel("Select an activity to see enrolled students.")
+            # Don't clear right panel if nothing selected, keep editor open if it was
+            # self.clear_right_panel("Select an activity to see enrolled students.")
             return
         item_values = self.activity_tree.item(selection[0], "values")
         if not item_values: return
@@ -455,13 +497,14 @@ class AdminFrame(ttk.Frame):
 
         columns = ("student_id", "name", "year_level", "house")
         students_tree = ttk.Treeview(details_frame, columns=columns, show="headings", height=10)
-        self.setup_treeview_columns(students_tree, columns, {"student_id": 80, "year_level": 80})
+        self.setup_treeview_columns(students_tree, columns, {"student_id": 80, "year_level": 80, "house": 100})
         students_tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=5)
         students_tree.bind("<<TreeviewSelect>>", self.on_student_select) # Bind selection
 
         # Populate the tree
         enrolled_count = 0
-        for s_id, s_data in students.items():
+        sorted_students_view = sorted(students.items()) # Sort students for consistent display
+        for s_id, s_data in sorted_students_view:
             if activity_id in s_data.get("activities_enrolled", []):
                 name = f"{s_data.get('firstname', '')} {s_data.get('surname', '')}"
                 students_tree.insert("", tk.END, values=(s_id, name, s_data.get("year_level", 'N/A'), s_data.get("house", 'N/A')))
@@ -472,7 +515,7 @@ class AdminFrame(ttk.Frame):
 
         # Add an Edit button for the selected activity below the student list
         edit_button = ttk.Button(details_frame, text=f"Edit '{activity_name}' Details", command=lambda: self.show_activity_editor(activity_id))
-        edit_button.pack(pady=10, anchor=tk.SW)
+        edit_button.pack(pady=(15, 5), anchor=tk.SW) # Add padding
 
         # Label to display selected student's info
         self.student_info_label_admin = ttk.Label(details_frame, text="Select a student to view details.", justify=tk.LEFT, wraplength=350)
@@ -483,7 +526,9 @@ class AdminFrame(ttk.Frame):
         # Need the tree that triggered the event
         tree = event.widget
         selection = tree.selection()
-        if not selection: return
+        if not selection:
+            self.student_info_label_admin.config(text="Select a student to view details.")
+            return
         vals = tree.item(selection[0], "values")
         try:
             st_id = int(vals[0])
@@ -546,7 +591,7 @@ class StaffFrame(ttk.Frame):
         ttk.Label(act_list_frame, text="Select Activity:", font=("Arial", 12)).pack(anchor=tk.NW)
         columns_act = ("activity_id", "activity", "enrollments")
         self.act_tree = ttk.Treeview(act_list_frame, columns=columns_act, show="headings", height=10)
-        self.setup_treeview_columns(self.act_tree, columns_act, {"enrollments": 100})
+        self.setup_treeview_columns(self.act_tree, columns_act, {"enrollments": 100, "activity_id": 80})
         self.act_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         self.act_tree.bind("<<TreeviewSelect>>", self.on_activity_select) # Single-click action
 
@@ -554,7 +599,7 @@ class StaffFrame(ttk.Frame):
         ttk.Label(act_list_frame, text="Enrolled Students:", font=("Arial", 12)).pack(anchor=tk.NW, pady=(10,0))
         cols_students = ("student_id", "name", "year_level")
         self.act_students_tree = ttk.Treeview(act_list_frame, columns=cols_students, show="headings", height=8)
-        self.setup_treeview_columns(self.act_students_tree, cols_students, {"year_level": 80})
+        self.setup_treeview_columns(self.act_students_tree, cols_students, {"year_level": 80, "student_id": 80})
         self.act_students_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         self.act_students_tree.bind("<<TreeviewSelect>>", self.on_enrolled_student_select) # Single-click action
 
@@ -562,9 +607,9 @@ class StaffFrame(ttk.Frame):
         ttk.Button(act_list_frame, text="Refresh Lists", command=self.refresh_activities).pack(pady=10, anchor=tk.SW)
 
         # Display area for selected student's info (in the right frame)
-        ttk.Label(self.student_details_frame, text="Student Information", font=("Arial", 14, "bold")).pack(pady=10)
-        self.student_info_label_act = ttk.Label(self.student_details_frame, text="Select a student from the 'Enrolled Students' list.", justify=tk.LEFT, wraplength=350, padding=10)
-        self.student_info_label_act.pack(fill=tk.BOTH, expand=True)
+        ttk.Label(self.student_details_frame, text="Student Information", font=("Arial", 14, "bold")).pack(pady=10, anchor=tk.NW)
+        self.student_info_label_act = ttk.Label(self.student_details_frame, text="Select an activity, then select a student from the 'Enrolled Students' list.", justify=tk.LEFT, wraplength=350, padding=10)
+        self.student_info_label_act.pack(fill=tk.BOTH, expand=True, anchor=tk.NW)
 
 
         # --- Students Tab ---
@@ -581,17 +626,18 @@ class StaffFrame(ttk.Frame):
         ttk.Label(student_list_frame, text="All Students:", font=("Arial", 12)).pack(anchor=tk.NW)
         columns_st = ("student_id", "name", "year", "house", "num_activities")
         self.st_tree = ttk.Treeview(student_list_frame, columns=columns_st, show="headings", height=20)
-        self.setup_treeview_columns(self.st_tree, columns_st, {"year": 60, "house": 80, "num_activities": 100})
+        self.setup_treeview_columns(self.st_tree, columns_st, {"student_id": 80, "year": 60, "house": 80, "num_activities": 100})
         self.st_tree.pack(fill=tk.BOTH, expand=True, pady=5)
         self.st_tree.bind("<Double-1>", self.on_student_double_click) # Double-click action
+        self.st_tree.bind("<<TreeviewSelect>>", self.on_student_single_click) # Single-click for hint
 
         # Refresh button for students tab
         ttk.Button(student_list_frame, text="Refresh Student List", command=self.refresh_students).pack(pady=10, anchor=tk.SW)
 
         # Display area for selected student's info (in the right frame)
-        ttk.Label(self.student_info_frame_st, text="Student Information", font=("Arial", 14, "bold")).pack(pady=10)
+        ttk.Label(self.student_info_frame_st, text="Student Information", font=("Arial", 14, "bold")).pack(pady=10, anchor=tk.NW)
         self.info_label_st = ttk.Label(self.student_info_frame_st, text="Double-click a student in the list to view details.", justify=tk.LEFT, wraplength=350, padding=10)
-        self.info_label_st.pack(fill=tk.BOTH, expand=True)
+        self.info_label_st.pack(fill=tk.BOTH, expand=True, anchor=tk.NW)
 
         # Initial data load
         self.refresh_activities()
@@ -617,7 +663,7 @@ class StaffFrame(ttk.Frame):
 
         # Clear dependent views
         self.act_students_tree.delete(*self.act_students_tree.get_children())
-        self.student_info_label_act.config(text="Select an activity, then a student.")
+        self.student_info_label_act.config(text="Select an activity, then select a student from the 'Enrolled Students' list.")
         # No save_data here - this is just reading.
 
     def refresh_students(self):
@@ -630,7 +676,7 @@ class StaffFrame(ttk.Frame):
             num_act = len(s_data.get("activities_enrolled", []))
             self.st_tree.insert("", tk.END, values=(s_id, fullname, s_data.get("year_level", "N/A"), s_data.get("house", "N/A"), num_act))
         # Clear student detail view on refresh
-        self.info_label_st.config(text="Double-click a student in the list.")
+        self.info_label_st.config(text="Double-click a student in the list to view details.")
         # No save_data here.
 
     def on_activity_select(self, event):
@@ -649,7 +695,8 @@ class StaffFrame(ttk.Frame):
 
             # Populate with enrolled students
             enrolled_count = 0
-            for s_id, s_data in students.items():
+            sorted_students_view = sorted(students.items()) # Sort students
+            for s_id, s_data in sorted_students_view:
                 if activity_id in s_data.get("activities_enrolled", []):
                     name = f"{s_data.get('firstname', '')} {s_data.get('surname', '')}"
                     year = s_data.get("year_level", 'N/A')
@@ -664,7 +711,9 @@ class StaffFrame(ttk.Frame):
     def on_enrolled_student_select(self, event):
         """Display details of the student selected from the 'Enrolled Students' list."""
         selection = self.act_students_tree.selection()
-        if not selection: return
+        if not selection:
+            self.student_info_label_act.config(text="Select a student from the list above.")
+            return
         vals = self.act_students_tree.item(selection[0], "values")
         try:
             student_id = int(vals[0])
@@ -672,6 +721,11 @@ class StaffFrame(ttk.Frame):
             self.student_info_label_act.config(text=info) # Update label in the right frame
         except (ValueError, IndexError):
             self.student_info_label_act.config(text="Could not retrieve student details.")
+
+    def on_student_single_click(self, event):
+        """Provide hint on single click in the all students list."""
+        if self.st_tree.selection():
+             self.info_label_st.config(text="Double-click the selected student to view details.")
 
     def on_student_double_click(self, event):
         """Display details of the student double-clicked in the main 'Students' tab."""
@@ -692,7 +746,8 @@ class StudentFrame(ttk.Frame):
     def __init__(self, parent, student_id):
         super().__init__(parent, padding=10)
         self.student_id = student_id
-        student_name = f"{students.get(student_id, {}).get('firstname', 'Student')}" # Get student's first name for title
+        student_data = students.get(self.student_id, {})
+        student_name = f"{student_data.get('firstname', 'Student')}" # Get student's first name for title
 
         title = ttk.Label(self, text=f"{student_name}'s Dashboard", font=("Arial", 16, "bold"))
         title.pack(anchor=tk.NW, pady=(0, 10))
@@ -729,17 +784,29 @@ class StudentFrame(ttk.Frame):
         right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
         self.details_label = ttk.Label(right_frame, text="Club Details", font=("Arial", 14, "bold"))
-        self.details_label.pack(anchor=tk.NW)
+        self.details_label.pack(anchor=tk.NW, pady=(0, 5))
 
         # Use Text widget for multi-line details, disable editing
-        self.club_details_text = tk.Text(right_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, relief=tk.FLAT, background=self.cget('bg')) # Match background
-        self.club_details_text.pack(fill=tk.BOTH, expand=True, pady=10)
+        # *** FIX: Removed the problematic background argument ***
+        # This line caused the error: unknown option "-bg" because tk.Text
+        # doesn't handle ttk theme backgrounds in the same way.
+        # Simply removing it lets tk.Text use its default background, fixing the error.
+        self.club_details_text = tk.Text(
+            right_frame, height=12, wrap=tk.WORD, state=tk.DISABLED, relief=tk.FLAT
+            # , background=self.cget('bg') # <--- REMOVED THIS PART
+        )
+        # Set background explicitly to the ttk frame's background for better theme matching
+        style = ttk.Style()
+        text_bg = style.lookup('TFrame', 'background') # Get default frame background
+        self.club_details_text.config(background=text_bg, highlightthickness=0) # Apply bg, remove border
+        self.club_details_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
-        # Action button (Join/Leave)
+
+        # Action button (Join/Leave/Contact)
         self.action_button = ttk.Button(right_frame, text="Select a club", state=tk.DISABLED, command=self.perform_club_action)
         self.action_button.pack(pady=10)
         self.selected_club_id = None # Store the currently selected club ID
-        self.current_action = None # Store 'join' or 'leave'
+        self.current_action = None # Store 'join', 'leave', or 'contact'
 
         self.refresh_tabs() # Load initial data
 
@@ -758,15 +825,47 @@ class StudentFrame(ttk.Frame):
 
         student_data = students.get(self.student_id, {})
         enrolled_ids = set(student_data.get("activities_enrolled", [])) # Use a set for faster lookups
+        student_year = student_data.get("year_level")
 
         sorted_activities = sorted(activities.items()) # Sort by ID
 
-        # Populate both trees
+        # Populate both trees, considering year level restrictions for available clubs
         for club_id, club_data in sorted_activities:
             club_name = club_data.get("activity", "Unknown Club")
+            allowed_years_str = club_data.get("year_level", "N/A")
+
+            # Check if student's year level matches the club's requirement
+            is_eligible = False
+            if student_year is not None and allowed_years_str != "N/A":
+                try:
+                    if "-" in allowed_years_str: # Range like "9-12"
+                        min_year, max_year = map(int, allowed_years_str.split('-'))
+                        if min_year <= student_year <= max_year:
+                            is_eligible = True
+                    elif "," in allowed_years_str: # List like "7, 9, 11"
+                         allowed_years = map(int, allowed_years_str.split(','))
+                         if student_year in allowed_years:
+                             is_eligible = True
+                    else: # Single year like "10" or maybe "7-12" without strict parsing
+                         # Simple check if student year is in the string (less robust but handles "7-12")
+                         if str(student_year) in allowed_years_str:
+                            is_eligible = True # Fallback check, might include "1" in "10-12" incorrectly if not careful
+                         # More robust check for single year or full range:
+                         try:
+                            if int(allowed_years_str) == student_year:
+                                is_eligible = True
+                         except ValueError: # Not a single integer, assume it means all years if not a range
+                             if "7-12" in allowed_years_str: # Handle common "all years" case
+                                is_eligible = True
+                except ValueError:
+                    print(f"Warning: Could not parse year level '{allowed_years_str}' for club {club_id}")
+                    is_eligible = True # Default to eligible if format is unexpected
+
+            # Always show enrolled clubs
             if club_id in enrolled_ids:
                 self.my_clubs_tree.insert("", tk.END, values=(club_id, club_name))
-            else:
+            # Only show available if eligible
+            elif is_eligible:
                 self.available_clubs_tree.insert("", tk.END, values=(club_id, club_name))
 
         # Clear details after refresh
@@ -779,7 +878,7 @@ class StudentFrame(ttk.Frame):
             details = "Club details not found."
         else:
             details_list = [
-                f"Club ID: {club_id}",
+                # f"Club ID: {club_id}", # Usually not needed for student view
                 f"Name: {club.get('activity', 'N/A')}",
                 f"Year Level(s): {club.get('year_level', 'N/A')}",
                 f"Location: {club.get('location', 'N/A')}",
@@ -788,11 +887,14 @@ class StudentFrame(ttk.Frame):
                 f"Dates: {club.get('start_date', 'N/A')} to {club.get('end_date', 'N/A')}"
             ]
             teacher_id = club.get("teacher_id")
+            teacher_info_str = "Teacher: N/A"
             if teacher_id and teacher_id in teachers:
                 t_data = teachers[teacher_id]
-                details_list.append(f"Teacher: {t_data.get('title','')} {t_data.get('firstname','')} {t_data.get('surname','')}")
-            else:
-                 details_list.append("Teacher: N/A")
+                teacher_info_str = f"Teacher: {t_data.get('title','')} {t_data.get('firstname','')} {t_data.get('surname','')}"
+                # Add contact info if desired
+                # contact = t_data.get('contact')
+                # if contact: teacher_info_str += f" (Contact: {contact})" # Decide if students should see this
+            details_list.append(teacher_info_str)
 
             details = "\n".join(details_list)
 
@@ -803,18 +905,32 @@ class StudentFrame(ttk.Frame):
         self.club_details_text.config(state=tk.DISABLED) # Disable editing
 
     def update_action_button(self, club_id, action_type):
-        """Configure the action button (Join/Leave)."""
+        """Configure the action button (Join/Leave/Contact)."""
         self.selected_club_id = club_id
         self.current_action = action_type
-        button_text = "Leave Club" if action_type == 'leave' else "Join Club"
-        self.action_button.config(text=button_text, state=tk.NORMAL)
+        button_text = "Select a club" # Default
+        button_state = tk.DISABLED # Default
+
+        if action_type == 'leave':
+            button_text = "Leave Club"
+            button_state = tk.NORMAL
+        elif action_type == 'join':
+            button_text = "Join Club"
+            button_state = tk.NORMAL
+        elif action_type == 'contact': # Example for adding contact functionality later
+            button_text = "Contact Teacher"
+            button_state = tk.NORMAL
+
+        self.action_button.config(text=button_text, state=button_state)
 
     def on_my_club_select(self, event):
         """Handle selection in the 'My Clubs' list."""
         selection = self.my_clubs_tree.selection()
         if selection:
             # Deselect from the other tree if necessary
-            self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
+            if self.available_clubs_tree.selection():
+                self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
+
             item_vals = self.my_clubs_tree.item(selection[0], "values")
             try:
                 club_id = int(item_vals[0])
@@ -828,7 +944,9 @@ class StudentFrame(ttk.Frame):
         selection = self.available_clubs_tree.selection()
         if selection:
             # Deselect from the other tree if necessary
-            self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
+            if self.my_clubs_tree.selection():
+                self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
+
             item_vals = self.available_clubs_tree.item(selection[0], "values")
             try:
                 club_id = int(item_vals[0])
@@ -852,7 +970,10 @@ class StudentFrame(ttk.Frame):
              messagebox.showerror("Error", "Student data not found.")
              return # Should not happen if logged in correctly
 
-        enrolled_list = student_data.setdefault("activities_enrolled", [])
+        # Ensure the activities_enrolled list exists and is a list
+        if "activities_enrolled" not in student_data or not isinstance(student_data["activities_enrolled"], list):
+            student_data["activities_enrolled"] = []
+        enrolled_list = student_data["activities_enrolled"]
 
         if action == 'join':
             if club_id not in enrolled_list:
@@ -860,6 +981,8 @@ class StudentFrame(ttk.Frame):
                 messagebox.showinfo("Success", f"You have joined '{club_name}'.")
                 save_data(activities, students) # Save the change
                 self.refresh_tabs() # Update UI
+                # Optionally re-select the club in the 'My Clubs' list after joining
+                # self.select_club_in_tree(self.my_clubs_tree, club_id)
             else:
                 messagebox.showinfo("Info", f"You are already enrolled in '{club_name}'.")
         elif action == 'leave':
@@ -869,8 +992,20 @@ class StudentFrame(ttk.Frame):
                     messagebox.showinfo("Success", f"You have left '{club_name}'.")
                     save_data(activities, students) # Save the change
                     self.refresh_tabs() # Update UI
+                    # Optionally re-select the club in the 'Available' list after leaving
+                    # self.select_club_in_tree(self.available_clubs_tree, club_id)
             else:
                  messagebox.showinfo("Info", f"You are not currently enrolled in '{club_name}'.")
+        # Example placeholder for contact action
+        # elif action == 'contact':
+        #     teacher_id = activities.get(club_id, {}).get('teacher_id')
+        #     if teacher_id and teacher_id in teachers:
+        #         t_data = teachers[teacher_id]
+        #         contact_info = t_data.get('contact', 'No contact information available.')
+        #         teacher_name = f"{t_data.get('title','')} {t_data.get('surname','')}"
+        #         messagebox.showinfo("Teacher Contact", f"Contact {teacher_name} for '{club_name}':\n{contact_info}")
+        #     else:
+        #         messagebox.showinfo("Teacher Contact", "No teacher contact information found for this club.")
         else:
             messagebox.showerror("Error", "Unknown action requested.")
 
@@ -878,14 +1013,33 @@ class StudentFrame(ttk.Frame):
         """Clear the details text and disable the action button."""
         self.club_details_text.config(state=tk.NORMAL)
         self.club_details_text.delete("1.0", tk.END)
-        self.club_details_text.insert(tk.END, "Select a club from the lists.")
+        self.club_details_text.insert(tk.END, "Select a club from the lists to see details.")
         self.club_details_text.config(state=tk.DISABLED)
+
         self.action_button.config(text="Select a club", state=tk.DISABLED)
         self.selected_club_id = None
         self.current_action = None
         # Ensure no selection remains visually in trees
-        self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
-        self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
+        if self.my_clubs_tree.selection():
+            self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
+        if self.available_clubs_tree.selection():
+            self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
+
+    # Optional helper function to re-select an item after moving it between trees
+    # def select_club_in_tree(self, tree, club_id):
+    #     """Finds and selects a club_id in the specified treeview."""
+    #     for item_iid in tree.get_children():
+    #         values = tree.item(item_iid, 'values')
+    #         if values and int(values[0]) == club_id:
+    #             tree.selection_set(item_iid)
+    #             tree.focus(item_iid) # Optional: set focus
+    #             tree.see(item_iid)   # Optional: scroll to item
+    #             # Manually trigger the select event handler to update details/button
+    #             if tree == self.my_clubs_tree:
+    #                 self.on_my_club_select(None) # Pass None as event object
+    #             elif tree == self.available_clubs_tree:
+    #                 self.on_available_club_select(None)
+    #             break
 
 
 # --- Main Execution ---
