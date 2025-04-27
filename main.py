@@ -9,12 +9,13 @@ DATA_FILE = "data.json"
 
 # --- Data Persistence ---
 
-def save_data(activities_data, students_data):
-    """Save the current activities and students data to a JSON file."""
-    # Convert integer keys to strings for JSON compatibility
+def save_data(activities_data, students_data, users_data, teachers_data):
+    """Save the current activities, students, users, and teachers data to a JSON file."""
     data_to_save = {
         "activities": {str(k): v for k, v in activities_data.items()},
-        "students": {str(k): v for k, v in students_data.items()}
+        "students": {str(k): v for k, v in students_data.items()},
+        "users": users_data, # Usernames are already strings
+        "teachers": {str(k): v for k, v in teachers_data.items()} # Convert teacher IDs to strings
     }
     try:
         with open(DATA_FILE, "w") as f:
@@ -23,34 +24,63 @@ def save_data(activities_data, students_data):
         messagebox.showerror("Save Error", f"Could not save data to {DATA_FILE}:\n{e}")
 
 def load_data():
-    """Load activities and students from JSON file. Return defaults if file not found or invalid."""
+    """Load data from JSON file. Return defaults/empty if file not found, invalid, or missing keys."""
     if not os.path.exists(DATA_FILE):
-        return get_default_activities(), get_default_students()
+        messagebox.showwarning("Load Warning", f"{DATA_FILE} not found. Loading default activities/students. User/teacher data might be missing.")
+        # Return defaults for activities/students, empty for users/teachers
+        return get_default_activities(), get_default_students(), {}, {}
 
     try:
         with open(DATA_FILE, "r") as f:
             data = json.load(f)
-        # Convert string keys back to integers after loading
-        activities_loaded = {int(k): v for k, v in data.get("activities", {}).items()}
-        students_loaded = {int(k): v for k, v in data.get("students", {}).items()}
-        # Ensure activities_enrolled is a list
-        for s_id, s_data in students_loaded.items():
-            if "activities_enrolled" not in s_data:
-                s_data["activities_enrolled"] = []
-            elif not isinstance(s_data["activities_enrolled"], list):
-                 s_data["activities_enrolled"] = [] # Reset if not a list
 
-        return activities_loaded, students_loaded
-    except (IOError, json.JSONDecodeError, ValueError) as e:
-        messagebox.showwarning("Load Error", f"Could not load data from {DATA_FILE}:\n{e}\nLoading default data.")
-        # If loading fails, fall back to defaults
-        return get_default_activities(), get_default_students()
+        # Load activities (convert keys to int), fallback to default if missing/error
+        try:
+            activities_loaded = {int(k): v for k, v in data.get("activities", {}).items()}
+        except (ValueError, AttributeError):
+             messagebox.showwarning("Load Warning", "Error reading activities data. Loading defaults.")
+             activities_loaded = get_default_activities()
 
-# --- Default Data Definitions ---
+        # Load students (convert keys to int), fallback to default if missing/error
+        try:
+            students_loaded = {int(k): v for k, v in data.get("students", {}).items()}
+            # Ensure activities_enrolled is a list
+            for s_id, s_data in students_loaded.items():
+                if "activities_enrolled" not in s_data:
+                    s_data["activities_enrolled"] = []
+                elif not isinstance(s_data["activities_enrolled"], list):
+                    s_data["activities_enrolled"] = [] # Reset if not a list
+        except (ValueError, AttributeError):
+             messagebox.showwarning("Load Warning", "Error reading students data. Loading defaults.")
+             students_loaded = get_default_students()
+
+        # Load users (usernames are strings), fallback to empty if missing
+        users_loaded = data.get("users", {})
+        if not users_loaded:
+             messagebox.showwarning("Load Warning", "User data missing from data.json. Login might fail.")
+
+        # Load teachers (convert keys to int), fallback to empty if missing
+        try:
+            teachers_loaded = {int(k): v for k, v in data.get("teachers", {}).items()}
+            if not teachers_loaded:
+                messagebox.showwarning("Load Warning", "Teacher data missing from data.json. Teacher info might be unavailable.")
+        except (ValueError, AttributeError):
+             messagebox.showwarning("Load Warning", "Error reading teachers data. Teacher info might be unavailable.")
+             teachers_loaded = {}
+
+
+        return activities_loaded, students_loaded, users_loaded, teachers_loaded
+
+    except (IOError, json.JSONDecodeError) as e:
+        messagebox.showwarning("Load Error", f"Could not load or parse {DATA_FILE}:\n{e}\nLoading default activities/students. User/teacher data might be missing.")
+        # If loading fails completely, fall back to defaults/empty
+        return get_default_activities(), get_default_students(), {}, {}
+
+# --- Default Data Definitions (Fallback only) ---
 
 def get_default_activities():
     """Provides a default set of extracurricular activities."""
-    # Combined definition for clarity
+    # This function remains as the fallback if data.json is missing/corrupt
     activities = {
         # Original 7
         2001: {"activity": "Basketball", "year_level": "9-10", "location": "Gym A", "days": "Mon, Wed", "time": "3:30 PM - 4:30 PM", "cost": 40, "teacher_id": 3001, "start_date": "01/02/2025", "end_date": "30/11/2025"},
@@ -76,6 +106,7 @@ def get_default_activities():
 
 def get_default_students():
     """Provides a default set of students with some random generation."""
+    # This function remains as the fallback if data.json is missing/corrupt
     default_students = {
         # Base students
         101908: {"firstname": "Maddi", "surname": "Gascar", "gender": "Female", "year_level": 9, "house": "Bradman", "dob": "27/06/2005", "activities_enrolled": [2001]},
@@ -105,31 +136,22 @@ def get_default_students():
     return default_students
 
 # --- Initial Data Load ---
-activities, students = load_data()
-# Note: Data is now saved only when changes are made, not necessarily on initial load.
+# Load all data structures from the JSON file
+activities, students, USERS, teachers = load_data()
 
-# --- Hard-coded User Credentials (for demo purposes) ---
-# In a real app, use a secure authentication method.
-USERS = {
-    "admin": {"password": "admin123", "role": "administrator"},
-    "staff": {"password": "staff123", "role": "staff"},
-    # Example student accounts linked to student IDs
-    "maddi": {"password": "student123", "role": "student", "student_id": 101908},
-    "laura": {"password": "student123", "role": "student", "student_id": 101920},
-    "don":   {"password": "student123", "role": "student", "student_id": 136111},
-    "harrison": {"password": "student123", "role": "student", "student_id": 136180},
-    "jim":   {"password": "student123", "role": "student", "student_id": 136179},
-    # Generic student login for testing
-    "student": {"password": "student123", "role": "student", "student_id": 101908},
-    # Randomly generated student login example
-    "rowan":   {"password": "student123", "role": "student", "student_id": 101990}, # Matches one generated ID
-}
+# Basic check to ensure essential config data was loaded
+if not USERS:
+    messagebox.showerror("Fatal Error", "User data could not be loaded. Application cannot start.")
+    exit() # Or handle more gracefully
+if not teachers:
+     # This might be less critical, maybe just show a warning
+    messagebox.showwarning("Startup Warning", "Teacher data could not be loaded. Teacher details may be missing.")
+    # teachers = {} # Ensure it's an empty dict if missing
 
-# --- Teacher Data (used for display) ---
-teachers = {
-    3001: {"firstname": "John",  "surname": "Smith",   "title": "Mr", "contact": "123-456-7890"},
-    3002: {"firstname": "Sarah", "surname": "Connor", "title": "Ms", "contact": "987-654-3210"}
-}
+
+# --- Hard-coded User Credentials & Teacher Data are now loaded from data.json ---
+# REMOVED the definitions of USERS and teachers from here.
+
 
 # --- Utility Functions ---
 def format_student_info(student_id):
@@ -178,12 +200,6 @@ class LoginWindow(tk.Tk):
             print("Clam theme not found, using default.")
             style.theme_use("default")
 
-        # Use system colors for better integration (optional)
-        # frame_bg = style.lookup('TFrame', 'background')
-        # label_fg = style.lookup('TLabel', 'foreground')
-        # entry_bg = style.lookup('TEntry', 'fieldbackground')
-        # entry_fg = style.lookup('TEntry', 'foreground')
-
         # Use fallback colors if system lookup fails or isn't desired
         frame_bg = "#f0f0f0"
         label_fg = "black"
@@ -226,6 +242,7 @@ class LoginWindow(tk.Tk):
         """Validate entered username and password."""
         username = self.username_entry.get().strip()
         password = self.password_entry.get().strip()
+        # Use the globally loaded USERS dictionary
         user_info = USERS.get(username)
 
         if user_info and user_info["password"] == password:
@@ -269,14 +286,10 @@ class MainApplication(tk.Tk):
         # Load the frame appropriate for the user's role
         self.load_role_frame()
 
-        # Handle window close event to ensure data saving if needed (optional)
-        # self.protocol("WM_DELETE_WINDOW", self.on_close)
-
         self.mainloop()
 
     def load_role_frame(self):
         """Creates and displays the frame based on the user's role."""
-        # Clear any existing frames first (though usually only called once)
         for widget in self.content_frame.winfo_children():
             widget.destroy()
 
@@ -286,33 +299,22 @@ class MainApplication(tk.Tk):
             StaffFrame(self.content_frame).pack(fill=tk.BOTH, expand=True)
         elif self.role == "student":
             if self.student_id:
-                # Check if student ID actually exists before creating frame
                 if self.student_id in students:
                     StudentFrame(self.content_frame, self.student_id).pack(fill=tk.BOTH, expand=True)
                 else:
                     messagebox.showerror("Error", f"Student ID {self.student_id} not found in student data.")
-                    self.logout() # Log out if student data is missing for ID
+                    self.logout()
             else:
                 messagebox.showerror("Error", "Student ID not found for student login.")
-                self.logout() # Log out if student ID is missing
+                self.logout()
         else:
             messagebox.showerror("Error", f"Unknown user role: {self.role}")
-            self.logout() # Log out if role is invalid
+            self.logout()
 
     def logout(self):
         """Log out the current user and return to the login screen."""
-        # Optional: Ask for confirmation
-        # if messagebox.askyesno("Logout", "Are you sure you want to logout?"):
         self.destroy()
         LoginWindow().mainloop()
-
-    # Optional: Add handler for closing the window
-    # def on_close(self):
-    #     """Handle window close event."""
-    #     # Could add a prompt to save unsaved changes here if needed
-    #     # For now, just calls logout logic
-    #     self.logout()
-
 
 # Administrator View Frame
 class AdminFrame(ttk.Frame):
@@ -370,7 +372,6 @@ class AdminFrame(ttk.Frame):
             enroll_count = self.count_enrollments(act_id)
             income = cost * enroll_count
             self.activity_tree.insert("", tk.END, values=(act_id, data.get("activity", "N/A"), f"${cost}", enroll_count, f"${income}"))
-        # Note: Removed save_data from refresh - only save when data actually changes.
 
     def count_enrollments(self, activity_id):
         """Count how many students are enrolled in a specific activity."""
@@ -431,8 +432,6 @@ class AdminFrame(ttk.Frame):
                 teacher_id_val = int(teacher_id_str) if teacher_id_str else None
                 if teacher_id_val is not None and teacher_id_val not in teachers:
                      messagebox.showwarning("Warning", f"Teacher ID {teacher_id_val} does not exist in the teacher list.")
-                     # Decide if you want to prevent saving or just warn
-                     # return # Uncomment to prevent saving with invalid teacher ID
             except ValueError:
                 messagebox.showerror("Error", "Teacher ID must be a number (or blank).")
                 return
@@ -455,12 +454,12 @@ class AdminFrame(ttk.Frame):
                 activities[act_id].update(updated_data)
                 message = "Activity updated successfully."
             else: # Adding new
-                # Find the next available ID (starting from 2001)
                 new_id = max(list(activities.keys()) + [2000]) + 1 # Ensure it's at least 2001
                 activities[new_id] = updated_data
                 message = f"Activity '{act_name}' added successfully with ID {new_id}."
 
-            save_data(activities, students) # Save changes to file
+            # Pass all data structures to save_data
+            save_data(activities, students, USERS, teachers)
             self.refresh_activities() # Update the tree view
             messagebox.showinfo("Success", message)
             self.clear_right_panel("Select an activity or Add/Edit.") # Clear form
@@ -472,8 +471,6 @@ class AdminFrame(ttk.Frame):
         """When an activity is selected, show enrolled students in the right panel."""
         selection = self.activity_tree.selection()
         if not selection:
-            # Don't clear right panel if nothing selected, keep editor open if it was
-            # self.clear_right_panel("Select an activity to see enrolled students.")
             return
         item_values = self.activity_tree.item(selection[0], "values")
         if not item_values: return
@@ -523,7 +520,6 @@ class AdminFrame(ttk.Frame):
 
     def on_student_select(self, event):
         """Display details of the student selected in the enrolled list."""
-        # Need the tree that triggered the event
         tree = event.widget
         selection = tree.selection()
         if not selection:
@@ -561,7 +557,8 @@ class AdminFrame(ttk.Frame):
                 if act_id in students[s_id].get("activities_enrolled", []):
                     students[s_id]["activities_enrolled"].remove(act_id)
 
-            save_data(activities, students) # Save the changes
+            # Pass all data structures to save_data
+            save_data(activities, students, USERS, teachers)
             self.refresh_activities() # Update the tree
             self.clear_right_panel("Activity deleted. Select another activity or Add/Edit.") # Clear the right panel
             messagebox.showinfo("Deleted", f"Activity '{act_name}' has been deleted.")
@@ -652,19 +649,15 @@ class StaffFrame(ttk.Frame):
 
     def refresh_activities(self):
         """Reload data for the activities tree and clear student list/details."""
-        # Clear activities tree
         self.act_tree.delete(*self.act_tree.get_children())
         sorted_activities = sorted(activities.items()) # Sort by ID
 
-        # Populate activities tree
         for act_id, data in sorted_activities:
             enroll_count = sum(1 for s in students.values() if act_id in s.get("activities_enrolled", []))
             self.act_tree.insert("", tk.END, values=(act_id, data.get("activity", "N/A"), enroll_count))
 
-        # Clear dependent views
         self.act_students_tree.delete(*self.act_students_tree.get_children())
         self.student_info_label_act.config(text="Select an activity, then select a student from the 'Enrolled Students' list.")
-        # No save_data here - this is just reading.
 
     def refresh_students(self):
         """Reload data for the main student list."""
@@ -675,9 +668,7 @@ class StaffFrame(ttk.Frame):
             fullname = f"{s_data.get('firstname', '')} {s_data.get('surname', '')}"
             num_act = len(s_data.get("activities_enrolled", []))
             self.st_tree.insert("", tk.END, values=(s_id, fullname, s_data.get("year_level", "N/A"), s_data.get("house", "N/A"), num_act))
-        # Clear student detail view on refresh
         self.info_label_st.config(text="Double-click a student in the list to view details.")
-        # No save_data here.
 
     def on_activity_select(self, event):
         """Update the 'Enrolled Students' list when an activity is clicked."""
@@ -688,12 +679,9 @@ class StaffFrame(ttk.Frame):
 
         try:
             activity_id = int(item_vals[0])
-            # Clear existing enrolled students tree
             self.act_students_tree.delete(*self.act_students_tree.get_children())
-            # Clear student info panel
             self.student_info_label_act.config(text="Select a student from the list above.")
 
-            # Populate with enrolled students
             enrolled_count = 0
             sorted_students_view = sorted(students.items()) # Sort students
             for s_id, s_data in sorted_students_view:
@@ -793,7 +781,6 @@ class StudentFrame(ttk.Frame):
         # Set background and foreground explicitly for better theme matching
         style = ttk.Style()
         text_bg = style.lookup('TFrame', 'background') # Get default frame background
-        # Try to get label foreground, fallback to black
         try:
             text_fg = style.lookup('TLabel', 'foreground')
         except tk.TclError:
@@ -825,7 +812,6 @@ class StudentFrame(ttk.Frame):
 
     def refresh_tabs(self):
         """Reload the 'My Clubs' and 'Available Clubs' lists."""
-        # Clear existing items
         self.my_clubs_tree.delete(*self.my_clubs_tree.get_children())
         self.available_clubs_tree.delete(*self.available_clubs_tree.get_children())
 
@@ -840,11 +826,9 @@ class StudentFrame(ttk.Frame):
             club_name = club_data.get("activity", "Unknown Club")
             allowed_years_str = club_data.get("year_level", "N/A")
 
-            # Check if student's year level matches the club's requirement
             is_eligible = False
             if student_year is not None and allowed_years_str != "N/A":
                 try:
-                    # Handle "All" or "7-12" type entries first
                     if "all" in allowed_years_str.lower() or allowed_years_str == "7-12":
                         is_eligible = True
                     elif "-" in allowed_years_str: # Range like "9-10"
@@ -860,19 +844,16 @@ class StudentFrame(ttk.Frame):
                             is_eligible = True
                 except ValueError:
                     print(f"Warning: Could not parse year level '{allowed_years_str}' for club {club_id}")
-                    is_eligible = True # Default to eligible if format is unexpected
-            elif allowed_years_str == "N/A": # If no year specified, assume eligible
+                    is_eligible = True
+            elif allowed_years_str == "N/A":
                  is_eligible = True
 
 
-            # Always show enrolled clubs
             if club_id in enrolled_ids:
                 self.my_clubs_tree.insert("", tk.END, values=(club_id, club_name))
-            # Only show available if eligible
             elif is_eligible:
                 self.available_clubs_tree.insert("", tk.END, values=(club_id, club_name))
 
-        # Clear details after refresh
         self.clear_details()
 
     def display_club_details(self, club_id):
@@ -882,7 +863,6 @@ class StudentFrame(ttk.Frame):
             details = "Club details not found."
         else:
             details_list = [
-                # f"Club ID: {club_id}", # Usually not needed for student view
                 f"Name: {club.get('activity', 'N/A')}",
                 f"Year Level(s): {club.get('year_level', 'N/A')}",
                 f"Location: {club.get('location', 'N/A')}",
@@ -895,14 +875,10 @@ class StudentFrame(ttk.Frame):
             if teacher_id and teacher_id in teachers:
                 t_data = teachers[teacher_id]
                 teacher_info_str = f"Teacher: {t_data.get('title','')} {t_data.get('firstname','')} {t_data.get('surname','')}"
-                # Add contact info if desired
-                # contact = t_data.get('contact')
-                # if contact: teacher_info_str += f" (Contact: {contact})" # Decide if students should see this
             details_list.append(teacher_info_str)
 
             details = "\n".join(details_list)
 
-        # Update the text widget
         self.club_details_text.config(state=tk.NORMAL) # Enable writing
         self.club_details_text.delete("1.0", tk.END) # Clear previous content
         self.club_details_text.insert(tk.END, details)
@@ -912,8 +888,8 @@ class StudentFrame(ttk.Frame):
         """Configure the action button (Join/Leave/Contact)."""
         self.selected_club_id = club_id
         self.current_action = action_type
-        button_text = "Select a club" # Default
-        button_state = tk.DISABLED # Default
+        button_text = "Select a club"
+        button_state = tk.DISABLED
 
         if action_type == 'leave':
             button_text = "Leave Club"
@@ -921,7 +897,7 @@ class StudentFrame(ttk.Frame):
         elif action_type == 'join':
             button_text = "Join Club"
             button_state = tk.NORMAL
-        elif action_type == 'contact': # Example for adding contact functionality later
+        elif action_type == 'contact':
             button_text = "Contact Teacher"
             button_state = tk.NORMAL
 
@@ -931,7 +907,6 @@ class StudentFrame(ttk.Frame):
         """Handle selection in the 'My Clubs' list."""
         selection = self.my_clubs_tree.selection()
         if selection:
-            # Deselect from the other tree if necessary
             if self.available_clubs_tree.selection():
                 self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
 
@@ -947,7 +922,6 @@ class StudentFrame(ttk.Frame):
         """Handle selection in the 'Available Clubs' list."""
         selection = self.available_clubs_tree.selection()
         if selection:
-            # Deselect from the other tree if necessary
             if self.my_clubs_tree.selection():
                 self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
 
@@ -972,9 +946,8 @@ class StudentFrame(ttk.Frame):
         student_data = students.get(self.student_id)
         if not student_data:
              messagebox.showerror("Error", "Student data not found.")
-             return # Should not happen if logged in correctly
+             return
 
-        # Ensure the activities_enrolled list exists and is a list
         if "activities_enrolled" not in student_data or not isinstance(student_data["activities_enrolled"], list):
             student_data["activities_enrolled"] = []
         enrolled_list = student_data["activities_enrolled"]
@@ -983,10 +956,9 @@ class StudentFrame(ttk.Frame):
             if club_id not in enrolled_list:
                 enrolled_list.append(club_id)
                 messagebox.showinfo("Success", f"You have joined '{club_name}'.")
-                save_data(activities, students) # Save the change
+                # Pass all data structures to save_data
+                save_data(activities, students, USERS, teachers)
                 self.refresh_tabs() # Update UI
-                # Optionally re-select the club in the 'My Clubs' list after joining
-                # self.select_club_in_tree(self.my_clubs_tree, club_id)
             else:
                 messagebox.showinfo("Info", f"You are already enrolled in '{club_name}'.")
         elif action == 'leave':
@@ -994,22 +966,11 @@ class StudentFrame(ttk.Frame):
                 if messagebox.askyesno("Confirm Leave", f"Are you sure you want to leave '{club_name}'?"):
                     enrolled_list.remove(club_id)
                     messagebox.showinfo("Success", f"You have left '{club_name}'.")
-                    save_data(activities, students) # Save the change
+                    # Pass all data structures to save_data
+                    save_data(activities, students, USERS, teachers)
                     self.refresh_tabs() # Update UI
-                    # Optionally re-select the club in the 'Available' list after leaving
-                    # self.select_club_in_tree(self.available_clubs_tree, club_id)
             else:
                  messagebox.showinfo("Info", f"You are not currently enrolled in '{club_name}'.")
-        # Example placeholder for contact action
-        # elif action == 'contact':
-        #     teacher_id = activities.get(club_id, {}).get('teacher_id')
-        #     if teacher_id and teacher_id in teachers:
-        #         t_data = teachers[teacher_id]
-        #         contact_info = t_data.get('contact', 'No contact information available.')
-        #         teacher_name = f"{t_data.get('title','')} {t_data.get('surname','')}"
-        #         messagebox.showinfo("Teacher Contact", f"Contact {teacher_name} for '{club_name}':\n{contact_info}")
-        #     else:
-        #         messagebox.showinfo("Teacher Contact", "No teacher contact information found for this club.")
         else:
             messagebox.showerror("Error", "Unknown action requested.")
 
@@ -1023,27 +984,10 @@ class StudentFrame(ttk.Frame):
         self.action_button.config(text="Select a club", state=tk.DISABLED)
         self.selected_club_id = None
         self.current_action = None
-        # Ensure no selection remains visually in trees
         if self.my_clubs_tree.selection():
             self.my_clubs_tree.selection_remove(self.my_clubs_tree.selection())
         if self.available_clubs_tree.selection():
             self.available_clubs_tree.selection_remove(self.available_clubs_tree.selection())
-
-    # Optional helper function to re-select an item after moving it between trees
-    # def select_club_in_tree(self, tree, club_id):
-    #     """Finds and selects a club_id in the specified treeview."""
-    #     for item_iid in tree.get_children():
-    #         values = tree.item(item_iid, 'values')
-    #         if values and int(values[0]) == club_id:
-    #             tree.selection_set(item_iid)
-    #             tree.focus(item_iid) # Optional: set focus
-    #             tree.see(item_iid)   # Optional: scroll to item
-    #             # Manually trigger the select event handler to update details/button
-    #             if tree == self.my_clubs_tree:
-    #                 self.on_my_club_select(None) # Pass None as event object
-    #             elif tree == self.available_clubs_tree:
-    #                 self.on_available_club_select(None)
-    #             break
 
 
 # --- Main Execution ---
