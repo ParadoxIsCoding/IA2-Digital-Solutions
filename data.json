@@ -39,7 +39,7 @@
             "location": "Art Room",
             "days": "Mon, Wed",
             "time": "3:00 PM - 4:00 PM",
-            "cost": 25,
+            "cost": 30,
             "teacher_id": 3002,
             "start_date": "01/03/2025",
             "end_date": "30/11/2025"
