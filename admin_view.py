@@ -30,7 +30,7 @@ class AdminFrame(ttk.Frame):
         # 'relief=tk.GROOVE' gives it a sunken border style. 'borderwidth=1' sets the border thickness.
         self.right_panel = ttk.Frame(self, relief=tk.GROOVE, borderwidth=1) # Add border for visual separation
         # Place the right panel on the right side, make it fill available space. 'padx=(5, 0)' adds padding only on the left.
-        self.left_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        self.right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
         # --- Left Panel Content (Activities Overview) ---
         # Add a label widget to the left panel for the title.
